@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Foliage — Recipe Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1a0f;--bg2:#162016;--bg3:#1e2e1e;--bg4:#253325;
+  --surface:#2a3d2a;--surface2:#334d33;
+  --cream:#f0e8d5;--cream2:#ddd0b5;
+  --gold:#c9a84c;--gold2:#e2c47a;
+  --moss:#6b8f5e;--moss2:#8fb880;
+  --rust:#c46a3a;
+  --text:#f0e8d5;--text2:#b8a98a;--text3:#7a6e58;
+  --border:rgba(240,232,213,0.08);--border2:rgba(240,232,213,0.15);
+  --r:10px;--r2:16px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Jost',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.5}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:64px;background:rgba(15,26,15,0.88);backdrop-filter:blur(18px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.75rem;font-weight:700;color:var(--cream);letter-spacing:.04em}
+.nav-logo span{color:var(--gold);font-style:italic}
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{font-size:.75rem;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text2);text-decoration:none;transition:color .2s}
+.nav-links a:hover{color:var(--cream)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 4rem;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 50% 85%,rgba(107,143,94,.18) 0%,transparent 65%),radial-gradient(ellipse 40% 25% at 20% 15%,rgba(201,168,76,.08) 0%,transparent 60%),linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%)}
+.hero-rings{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:800px;height:800px;pointer-events:none}
+.hero-rings circle{fill:none;stroke:var(--moss);opacity:.05}
+.eyebrow{position:relative;font-size:.72rem;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:var(--moss2);margin-bottom:1.2rem;display:flex;align-items:center;gap:.8rem}
+.eyebrow::before,.eyebrow::after{content:'';display:block;width:30px;height:1px;background:var(--moss)}
+.hero h1{position:relative;font-family:'Cormorant Garamond',serif;font-size:clamp(3rem,8vw,7rem);font-weight:600;line-height:1.0;color:var(--cream);letter-spacing:-.02em;margin-bottom:.3em}
+.hero h1 em{color:var(--gold);font-style:italic}
+.hero-sub{position:relative;font-size:1rem;font-weight:300;color:var(--text2);max-width:440px;line-height:1.7;margin-bottom:2.5rem}
+
+/* SEARCH */
+.search-container{position:relative;width:100%;max-width:640px;margin-bottom:1.5rem}
+.search-wrap{display:flex;align-items:center;background:var(--bg3);border:1px solid var(--border2);border-radius:50px;overflow:hidden;transition:border-color .25s,box-shadow .25s}
+.search-wrap:focus-within{border-color:var(--moss);box-shadow:0 0 0 3px rgba(107,143,94,.15)}
+.search-wrap svg{margin-left:1.4rem;flex-shrink:0;stroke:var(--text3);transition:stroke .2s}
+.search-wrap:focus-within svg{stroke:var(--moss2)}
+#mainSearch{flex:1;border:none;outline:none;background:transparent;font-family:'Jost',sans-serif;font-size:1rem;color:var(--cream);padding:1rem .8rem}
+#mainSearch::placeholder{color:var(--text3)}
+#searchBtn{background:var(--gold);color:var(--bg);border:none;padding:0 1.8rem;height:52px;font-family:'Jost',sans-serif;font-size:.8rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .2s,transform .15s;flex-shrink:0}
+#searchBtn:hover{background:var(--gold2);transform:scale(1.02)}
+#searchBtn:active{transform:scale(.97)}
+
+/* QUICK TAGS */
+.quick-tags{position:relative;display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center}
+.qtag{padding:.4rem 1rem;border-radius:50px;border:1px solid var(--border2);background:transparent;font-family:'Jost',sans-serif;font-size:.78rem;color:var(--text2);cursor:pointer;transition:all .2s}
+.qtag:hover{border-color:var(--moss);color:var(--moss2);background:rgba(107,143,94,.08)}
+.qtag.active{background:var(--moss);border-color:var(--moss);color:#fff}
+
+/* FILTER BAR */
+.filter-bar{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:1rem 2.5rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
+.filter-group{display:flex;align-items:center;gap:.6rem}
+.filter-label{font-size:.68rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);white-space:nowrap}
+.filter-select{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text2);font-family:'Jost',sans-serif;font-size:.82rem;padding:.4rem .8rem;outline:none;cursor:pointer;transition:border-color .2s}
+.filter-select:focus{border-color:var(--moss)}
+.filter-select option{background:var(--bg3)}
+.filter-divider{width:1px;height:24px;background:var(--border2);flex-shrink:0}
+.diet-chips{display:flex;gap:.4rem;flex-wrap:wrap}
+.dchip{padding:.3rem .75rem;border-radius:50px;border:1px solid var(--border2);background:transparent;font-family:'Jost',sans-serif;font-size:.75rem;color:var(--text2);cursor:pointer;transition:all .18s;user-select:none}
+.dchip:hover{border-color:var(--gold);color:var(--gold)}
+.dchip.active{background:var(--gold);border-color:var(--gold);color:var(--bg)}
+.clear-btn{margin-left:auto;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:6px;font-family:'Jost',sans-serif;font-size:.75rem;padding:.4rem .9rem;cursor:pointer;transition:all .2s}
+.clear-btn:hover{border-color:var(--rust);color:var(--rust)}
+
+/* MAIN */
+main{max-width:1400px;margin:0 auto;padding:2.5rem 2.5rem 4rem}
+.results-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1.8rem;flex-wrap:wrap;gap:1rem}
+.results-title{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:600;color:var(--cream)}
+.results-title span{color:var(--gold)}
+.sort-wrap{display:flex;align-items:center;gap:.6rem}
+.sort-label{font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.12em}
+.sort-select{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text2);font-family:'Jost',sans-serif;font-size:.82rem;padding:.4rem .8rem;outline:none;cursor:pointer}
+.sort-select option{background:var(--bg3)}
+
+/* GRID */
+.recipe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem}
+.recipe-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;cursor:pointer;transition:transform .25s cubic-bezier(.34,1.4,.64,1),border-color .2s,box-shadow .25s;animation:fadeUp .4s ease both}
+.recipe-card:hover{transform:translateY(-6px);border-color:var(--border2);box-shadow:0 16px 48px rgba(0,0,0,.4),0 0 0 1px rgba(107,143,94,.2)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.card-thumb{position:relative;height:210px;overflow:hidden;background:var(--bg4)}
+.card-emoji{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:5rem;background:linear-gradient(135deg,var(--bg4),var(--surface))}
+.card-thumb-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(15,26,15,.7) 0%,transparent 50%)}
+.card-badges{position:absolute;top:.75rem;left:.75rem;display:flex;gap:.35rem;flex-wrap:wrap}
+.badge{font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.22rem .55rem;border-radius:50px}
+.badge-diet{background:rgba(107,143,94,.85);color:#fff}
+.badge-time{background:rgba(15,26,15,.75);color:var(--text2)}
+.badge-diff{background:rgba(201,168,76,.18);color:var(--gold2);border:1px solid rgba(201,168,76,.28)}
+.card-fav{position:absolute;top:.7rem;right:.75rem;width:32px;height:32px;border-radius:50%;border:none;background:rgba(15,26,15,.65);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.9rem;transition:all .2s}
+.card-fav:hover{background:rgba(196,106,58,.8);transform:scale(1.1)}
+.card-fav.loved{background:rgba(196,106,58,.85)}
+.card-rating-pill{position:absolute;bottom:.75rem;right:.75rem;background:rgba(15,26,15,.75);backdrop-filter:blur(8px);border-radius:50px;padding:.3rem .65rem;font-size:.75rem;color:var(--gold2);font-weight:600;display:flex;align-items:center;gap:.25rem}
+.card-body{padding:1.1rem 1.3rem 1.3rem}
+.card-cuisine{font-size:.65rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--moss2);margin-bottom:.4rem}
+.card-title{font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:600;line-height:1.25;color:var(--cream);margin-bottom:.45rem}
+.card-desc{font-size:.8rem;color:var(--text3);line-height:1.55;margin-bottom:.9rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{display:flex;gap:1.1rem;align-items:center;font-size:.77rem;color:var(--text2);border-top:1px solid var(--border);padding-top:.8rem}
+.meta-item{display:flex;align-items:center;gap:.3rem}
+.meta-item svg{opacity:.6}
+.card-cals{margin-left:auto;font-size:.72rem;color:var(--text3)}
+.card-cals strong{color:var(--gold);font-weight:600}
+
+/* EMPTY */
+.empty{text-align:center;padding:5rem 2rem;color:var(--text3);grid-column:1/-1}
+.empty-icon{font-size:4rem;margin-bottom:1rem;opacity:.3}
+.empty h3{font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:var(--text2);margin-bottom:.5rem}
+.empty p{font-size:.9rem;line-height:1.6}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(8,14,8,.82);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg3);border:1px solid var(--border2);border-radius:20px;max-width:780px;width:100%;max-height:90vh;overflow-y:auto;position:relative;animation:popIn .35s cubic-bezier(.34,1.4,.64,1) both;scrollbar-width:thin;scrollbar-color:var(--surface2) transparent}
+@keyframes popIn{from{opacity:0;transform:scale(.88) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-close{position:sticky;top:1rem;float:right;margin:1rem 1rem -44px 0;width:38px;height:38px;border-radius:50%;background:var(--surface2);border:none;color:var(--text2);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:10}
+.modal-close:hover{background:var(--rust);color:#fff}
+.modal-hero{width:100%;height:280px;overflow:hidden;border-radius:20px 20px 0 0;background:linear-gradient(135deg,var(--bg4),var(--surface));display:flex;align-items:center;justify-content:center;font-size:8rem;position:relative}
+.modal-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(30,46,30,.95) 0%,transparent 55%)}
+.modal-hero-bottom{position:absolute;bottom:1.2rem;left:1.8rem;right:1.8rem;display:flex;align-items:flex-end;justify-content:space-between;gap:1rem}
+.modal-cuisine-badge{font-size:.65rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--moss2);margin-bottom:.4rem}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;color:var(--cream);line-height:1.1}
+.modal-rating{font-size:1rem;color:var(--gold);white-space:nowrap;display:flex;align-items:center;gap:.3rem;flex-shrink:0;font-weight:600}
+.modal-body{padding:1.5rem 2rem 2rem}
+.modal-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.8rem}
+.stat-card{background:var(--bg4);border-radius:var(--r);padding:.8rem;text-align:center;border:1px solid var(--border)}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:700;color:var(--cream)}
+.stat-lbl{font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-top:2px}
+.modal-section{margin-bottom:1.8rem}
+.modal-section-title{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:600;color:var(--cream);margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem}
+.ingredient-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.ingredient-item{display:flex;align-items:flex-start;gap:.6rem;font-size:.855rem;color:var(--text2);line-height:1.4;padding:.5rem .6rem;border-radius:6px;background:var(--bg4);border:1px solid var(--border)}
+.ing-dot{width:8px;height:8px;min-width:8px;border-radius:50%;background:var(--moss);margin-top:.35rem}
+.steps-list{list-style:none;display:flex;flex-direction:column;gap:1rem}
+.step{display:flex;gap:1rem;align-items:flex-start;padding:1rem;border-radius:var(--r);background:var(--bg4);border:1px solid var(--border)}
+.step-num{width:30px;height:30px;min-width:30px;border-radius:50%;background:linear-gradient(135deg,var(--moss),var(--moss2));display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;color:#fff;flex-shrink:0}
+.step-text{font-size:.875rem;color:var(--text2);line-height:1.6}
+.nutrition-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
+.nut-card{background:var(--bg4);border-radius:var(--r);border:1px solid var(--border);padding:.75rem;text-align:center}
+.nut-val{font-size:1.2rem;font-weight:600;font-family:'Cormorant Garamond',serif;color:var(--gold)}
+.nut-lbl{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-top:2px}
+
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px}
+
+.recipe-card:nth-child(1){animation-delay:.04s}.recipe-card:nth-child(2){animation-delay:.08s}
+.recipe-card:nth-child(3){animation-delay:.12s}.recipe-card:nth-child(4){animation-delay:.16s}
+.recipe-card:nth-child(5){animation-delay:.20s}.recipe-card:nth-child(6){animation-delay:.24s}
+.recipe-card:nth-child(7){animation-delay:.28s}.recipe-card:nth-child(8){animation-delay:.32s}
+.recipe-card:nth-child(9){animation-delay:.36s}.recipe-card:nth-child(10){animation-delay:.40s}
+.recipe-card:nth-child(11){animation-delay:.44s}.recipe-card:nth-child(12){animation-delay:.48s}
+
+@media(max-width:700px){
+  nav{padding:0 1.2rem}.nav-links{display:none}
+  .hero{padding:7rem 1.2rem 3rem}
+  main{padding:1.5rem 1.2rem 3rem}
+  .filter-bar{padding:1rem 1.2rem}
+  .recipe-grid{grid-template-columns:1fr}
+  .modal-stats{grid-template-columns:repeat(2,1fr)}
+  .nutrition-grid{grid-template-columns:repeat(2,1fr)}
+  .ingredient-grid{grid-template-columns:1fr}
+  .modal-body{padding:1rem 1.2rem 1.5rem}
+  .modal-title{font-size:1.4rem}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Fo<span>lia</span>ge</div>
+  <ul class="nav-links">
+    <li><a href="#">Discover</a></li>
+    <li><a href="#">Collections</a></li>
+    <li><a href="#">Cuisines</a></li>
+    <li><a href="#">Favourites</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <svg class="hero-rings" viewBox="0 0 800 800">
+    <circle cx="400" cy="400" r="190"/>
+    <circle cx="400" cy="400" r="295"/>
+    <circle cx="400" cy="400" r="380"/>
+  </svg>
+  <p class="eyebrow">Advanced Recipe Finder</p>
+  <h1>Cook with <em>intention,</em><br>eat with joy</h1>
+  <p class="hero-sub">Search thousands of recipes by ingredient, cuisine, diet type, cook time, and more.</p>
+  <div class="search-container">
+    <div class="search-wrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="mainSearch" placeholder="Search by name, ingredient, or cuisine…" autocomplete="off"/>
+      <button id="searchBtn">Search</button>
+    </div>
+  </div>
+  <div class="quick-tags">
+    <button class="qtag" data-q="pasta">🍝 Pasta</button>
+    <button class="qtag" data-q="chicken">🍗 Chicken</button>
+    <button class="qtag" data-q="soup">🍲 Soup</button>
+    <button class="qtag" data-q="salad">🥗 Salad</button>
+    <button class="qtag" data-q="dessert">🍫 Dessert</button>
+    <button class="qtag" data-q="vegan">🌿 Vegan</button>
+    <button class="qtag" data-q="seafood">🦐 Seafood</button>
+    <button class="qtag" data-q="eggs">🍳 Eggs</button>
+  </div>
+</section>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <div class="filter-group">
+    <span class="filter-label">Cuisine</span>
+    <select class="filter-select" id="filterCuisine">
+      <option value="">All</option>
+      <option>Italian</option><option>Asian</option><option>Mexican</option>
+      <option>Indian</option><option>Mediterranean</option>
+      <option>American</option><option>French</option><option>Middle Eastern</option>
+    </select>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-group">
+    <span class="filter-label">Time</span>
+    <select class="filter-select" id="filterTime">
+      <option value="">Any</option>
+      <option value="15">≤ 15 min</option><option value="30">≤ 30 min</option>
+      <option value="60">≤ 60 min</option><option value="90">≤ 90 min</option>
+    </select>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-group">
+    <span class="filter-label">Difficulty</span>
+    <select class="filter-select" id="filterDiff">
+      <option value="">All</option>
+      <option>Easy</option><option>Medium</option><option>Hard</option>
+    </select>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-group">
+    <span class="filter-label">Diet</span>
+    <div class="diet-chips" id="dietChips">
+      <button class="dchip" data-diet="Vegetarian">Vegetarian</button>
+      <button class="dchip" data-diet="Vegan">Vegan</button>
+      <button class="dchip" data-diet="Gluten-Free">Gluten-Free</button>
+      <button class="dchip" data-diet="Dairy-Free">Dairy-Free</button>
+      <button class="dchip" data-diet="Keto">Keto</button>
+    </div>
+  </div>
+  <button class="clear-btn" id="clearBtn">✕ Clear all</button>
+</div>
+
+<!-- MAIN CONTENT -->
+<main>
+  <div class="results-header">
+    <h2 class="results-title">Showing <span id="countSpan">0</span> recipes</h2>
+    <div class="sort-wrap">
+      <span class="sort-label">Sort by</span>
+      <select class="sort-select" id="sortSelect">
+        <option value="rating">Top Rated</option>
+        <option value="time">Quickest</option>
+        <option value="cals">Lowest Calories</option>
+        <option value="name">Name A–Z</option>
+      </select>
+    </div>
+  </div>
+  <div class="recipe-grid" id="recipeGrid"></div>
+</main>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+const RECIPES=[
+  /* ── ITALIAN ── */
+  {id:1,name:"Spaghetti Carbonara",cuisine:"Italian",emoji:"🍝",time:25,difficulty:"Medium",rating:4.8,cals:620,diet:["Vegetarian"],
+   desc:"A classic Roman pasta with eggs, Pecorino Romano, guanciale, and freshly cracked black pepper. Silky, rich, and utterly satisfying.",
+   ingredients:["400g spaghetti","200g guanciale","4 large eggs","100g Pecorino Romano","100g Parmesan","Freshly cracked black pepper","Coarse salt"],
+   steps:["Bring a large pot of heavily salted water to a boil and cook spaghetti until al dente.","Slice guanciale into thick lardons and fry in a dry pan over medium heat until crispy and golden. Remove from heat.","Vigorously whisk eggs with grated Pecorino and Parmesan until combined.","Drain pasta, reserving at least 1 cup of pasta cooking water.","Add hot pasta directly to the guanciale pan off the heat. Toss to coat in the fat.","Pour egg mixture over pasta, tossing quickly. Add splashes of pasta water to emulsify into a glossy sauce.","Season with generous black pepper. Serve immediately in warmed bowls."],
+   nutrition:{cal:620,protein:28,carbs:72,fat:24}},
+
+  {id:2,name:"Thai Green Curry",cuisine:"Asian",emoji:"🍛",time:35,difficulty:"Medium",rating:4.7,cals:480,diet:["Gluten-Free","Dairy-Free"],
+   desc:"Fragrant Thai green curry with coconut milk, kaffir lime leaves, and tender chicken. Aromatic, spicy, and deeply comforting.",
+   ingredients:["400ml coconut milk","3 tbsp green curry paste","500g chicken thighs","1 zucchini","1 red bell pepper","6 kaffir lime leaves","2 tbsp fish sauce","Fresh Thai basil","Jasmine rice to serve"],
+   steps:["Heat a splash of oil in a wok over high heat. Add green curry paste and fry for 2 minutes until deeply fragrant.","Pour in the thick part of coconut milk. Stir and simmer until the oil separates, about 3 minutes.","Add chicken pieces and cook for 10 minutes, turning occasionally.","Pour in remaining coconut milk and add vegetables and lime leaves.","Simmer 5 minutes until vegetables are just tender.","Season with fish sauce and a pinch of palm sugar to balance.","Stir in Thai basil and serve over steamed jasmine rice."],
+   nutrition:{cal:480,protein:35,carbs:28,fat:26}},
+
+  {id:3,name:"Avocado Toast & Poached Eggs",cuisine:"American",emoji:"🥑",time:15,difficulty:"Easy",rating:4.5,cals:340,diet:["Vegetarian","Dairy-Free"],
+   desc:"Creamy smashed avocado on golden sourdough with perfectly poached eggs, chilli flakes, and a squeeze of lemon.",
+   ingredients:["2 thick slices sourdough","2 ripe avocados","2 large eggs","1 lemon, juiced & zested","Chilli flakes","Flaky sea salt & cracked pepper","Microgreens or watercress","White wine vinegar"],
+   steps:["Toast sourdough slices under a grill or in a toaster until deep golden.","Halve avocados, scoop into a bowl. Mash with lemon juice, salt, and pepper — keep it chunky.","Bring a saucepan of water to a gentle simmer. Add a splash of white wine vinegar.","Swirl the water gently, crack eggs into cups, then slide into the water.","Poach for 3–4 minutes until whites are set but yolks remain runny.","Spread smashed avocado generously on toast. Top with drained poached eggs.","Finish with lemon zest, chilli flakes, microgreens, and flaky salt."],
+   nutrition:{cal:340,protein:14,carbs:32,fat:20}},
+
+  {id:4,name:"Butter Chicken",cuisine:"Indian",emoji:"🍗",time:55,difficulty:"Medium",rating:4.9,cals:540,diet:["Gluten-Free"],
+   desc:"Tender chicken in a velvety tomato-cream sauce richly spiced with garam masala, cumin, and dried fenugreek. A beloved classic.",
+   ingredients:["700g chicken thighs","400g crushed tomatoes","200ml double cream","2 large onions","3 tbsp ginger-garlic paste","2 tsp garam masala","1 tsp Kashmiri chilli","1 tsp cumin","60g butter","1 tbsp dried fenugreek leaves"],
+   steps:["Marinate chicken with yoghurt, chilli, and garam masala for at least 1 hour, overnight if possible.","Grill or pan-fry chicken until lightly charred on the outside. Set aside.","Melt butter in a heavy pan. Sauté onions until deep golden, about 20 minutes.","Add ginger-garlic paste and cook 2 minutes. Add tomatoes and spices. Simmer 15 minutes.","Blend the sauce until completely smooth. Return to pan.","Add cream and cooked chicken pieces. Simmer gently for 10 minutes.","Crush and stir in dried fenugreek leaves. Serve with naan or basmati rice."],
+   nutrition:{cal:540,protein:42,carbs:18,fat:32}},
+
+  {id:5,name:"Herb-Baked Salmon",cuisine:"Mediterranean",emoji:"🐟",time:25,difficulty:"Easy",rating:4.6,cals:390,diet:["Gluten-Free","Dairy-Free","Keto"],
+   desc:"Flaky salmon fillets baked with lemon, garlic, and fresh herbs. Light, nutritious, and ready in under 30 minutes.",
+   ingredients:["4 salmon fillets (180g each)","2 lemons","4 garlic cloves, minced","Large bunch fresh dill","Large bunch fresh flat-leaf parsley","3 tbsp olive oil","Flaky sea salt & cracked pepper","2 tbsp capers"],
+   steps:["Preheat oven to 200°C. Line a baking tray with parchment.","Whisk together lemon juice, zest, minced garlic, and olive oil.","Place salmon fillets on the tray. Season generously with salt and pepper.","Pour lemon-garlic mixture evenly over the fillets.","Scatter fresh dill, parsley, and capers over and around the fish.","Bake for 15–18 minutes until salmon flakes easily with a fork.","Serve immediately with a crisp green salad or roasted asparagus."],
+   nutrition:{cal:390,protein:45,carbs:4,fat:22}},
+
+  {id:6,name:"Porcini Mushroom Risotto",cuisine:"Italian",emoji:"🍄",time:45,difficulty:"Medium",rating:4.7,cals:510,diet:["Vegetarian","Gluten-Free"],
+   desc:"Creamy Arborio rice slowly coaxed with porcini mushrooms, white wine, and aged Parmesan. The definitive comfort dish.",
+   ingredients:["300g Arborio rice","500g mixed mushrooms","20g dried porcini mushrooms","1 litre hot vegetable stock","150ml dry white wine","1 large shallot","3 garlic cloves","80g Parmesan, finely grated","50g cold butter","Fresh thyme sprigs"],
+   steps:["Soak dried porcini in 200ml hot water for 20 minutes. Strain, reserving liquid. Roughly chop.","Sauté shallot and garlic in olive oil until translucent and soft.","Add fresh and soaked mushrooms. Cook until golden and moisture evaporates.","Add Arborio rice and toast, stirring, for 2 minutes until translucent at the edges.","Pour in white wine and stir constantly until fully absorbed.","Add hot stock one ladle at a time, stirring, allowing each to absorb before adding the next — about 20 minutes total.","Remove from heat. Beat in cold butter and Parmesan. Rest 2 minutes. Season and serve immediately."],
+   nutrition:{cal:510,protein:16,carbs:72,fat:18}},
+
+  {id:7,name:"Tacos al Pastor",cuisine:"Mexican",emoji:"🌮",time:50,difficulty:"Medium",rating:4.8,cals:460,diet:["Dairy-Free"],
+   desc:"Marinated pork cooked with caramelised pineapple, served in warm corn tortillas with fresh cilantro, onion, and lime.",
+   ingredients:["600g pork shoulder","3 dried guajillo chillies","2 tbsp achiote paste","1 pineapple","12 corn tortillas","1 white onion, finely diced","Large bunch fresh cilantro","3 limes","Salsa verde to serve"],
+   steps:["Soak guajillo chillies in boiling water for 20 minutes. Blend with achiote, garlic, vinegar, and spices into a smooth marinade.","Slice pork shoulder thinly across the grain. Coat in marinade and refrigerate overnight.","Heat a cast iron pan or grill to very high heat. Cook pork in batches until charred and caramelised at the edges.","Grill pineapple slices until caramelised. Dice into small cubes.","Warm corn tortillas in a dry skillet for 30 seconds per side.","Layer pork onto tortillas. Top with pineapple, white onion, and fresh cilantro.","Squeeze lime juice generously and serve with salsa verde."],
+   nutrition:{cal:460,protein:38,carbs:42,fat:16}},
+
+  {id:8,name:"Chocolate Lava Cake",cuisine:"French",emoji:"🍫",time:20,difficulty:"Easy",rating:4.9,cals:580,diet:["Vegetarian"],
+   desc:"Elegant individual chocolate cakes with a warm flowing molten centre. Decadent, impressive, and surprisingly simple.",
+   ingredients:["200g 70% dark chocolate","100g unsalted butter","3 whole eggs","3 egg yolks","80g caster sugar","60g plain flour, sifted","Cocoa powder for dusting","1 tsp vanilla extract","Pinch of sea salt"],
+   steps:["Preheat oven to 220°C. Butter four ramekins generously and dust with cocoa powder. Tap out excess.","Melt chocolate and butter together in a heatproof bowl over barely simmering water. Stir until smooth. Cool slightly.","Whisk whole eggs, yolks, and sugar together until pale, thick, and ribbony — about 3 minutes.","Fold chocolate mixture into the eggs, then gently fold in sifted flour, vanilla, and salt.","Fill ramekins three-quarters full. Refrigerate for at least 30 minutes (up to 24 hours).","Bake directly from fridge for 10–12 minutes until edges are fully set but centre has a slight wobble.","Run a knife around the edge, invert onto plates. Serve immediately with vanilla ice cream."],
+   nutrition:{cal:580,protein:10,carbs:52,fat:38}},
+
+  {id:9,name:"Shakshuka",cuisine:"Middle Eastern",emoji:"🍳",time:30,difficulty:"Easy",rating:4.6,cals:310,diet:["Vegetarian","Gluten-Free","Dairy-Free"],
+   desc:"Eggs poached in a vibrant spiced tomato and pepper sauce with cumin and smoked paprika. Perfect from breakfast to dinner.",
+   ingredients:["6 large eggs","800g good quality crushed tomatoes","2 red peppers, diced","1 large onion, diced","4 garlic cloves, sliced","2 tsp cumin","2 tsp smoked paprika","1/2 tsp cayenne","Large bunch flat-leaf parsley","3 tbsp olive oil"],
+   steps:["Heat olive oil in a large, deep frying pan. Sauté onion and peppers over medium heat until softened, about 8 minutes.","Add sliced garlic and all the spices. Cook for 1 minute until fragrant.","Pour in crushed tomatoes. Season with salt and a pinch of sugar. Simmer 10–12 minutes until sauce thickens.","Use the back of a spoon to make 6 wells in the sauce. Crack an egg into each well.","Cover with a lid and cook over medium-low heat until whites are just set but yolks are still runny, about 7–9 minutes.","Scatter with fresh parsley and a drizzle of good olive oil.","Serve directly from the pan with warm flatbread or crusty bread."],
+   nutrition:{cal:310,protein:20,carbs:24,fat:16}},
+
+  {id:10,name:"Prawn Pad Thai",cuisine:"Asian",emoji:"🍜",time:20,difficulty:"Easy",rating:4.7,cals:490,diet:["Dairy-Free","Gluten-Free"],
+   desc:"Classic Thai stir-fried rice noodles with prawns, tofu, egg, bean sprouts, and a sweet-sour tamarind sauce.",
+   ingredients:["200g flat rice noodles","250g raw king prawns","100g firm tofu, cubed","3 eggs","Large handful bean sprouts","4 spring onions, sliced","60g roasted peanuts, crushed","3 tbsp tamarind paste","3 tbsp fish sauce","2 tbsp palm sugar","2 limes"],
+   steps:["Soak rice noodles in warm water for 20 minutes until pliable but still firm. Drain.","Combine tamarind paste, fish sauce, palm sugar, and 2 tbsp water to make the sauce.","Heat a wok until smoking. Stir-fry prawns and tofu for 2 minutes. Push to the side.","Crack eggs into the wok and scramble gently.","Add drained noodles and the sauce. Toss everything vigorously over high heat for 2 minutes.","Add bean sprouts and spring onions. Toss briefly — they should retain their crunch.","Plate up topped with crushed peanuts, lime wedges, and chilli flakes on the side."],
+   nutrition:{cal:490,protein:32,carbs:58,fat:14}},
+
+  {id:11,name:"Vegan Buddha Bowl",cuisine:"American",emoji:"🥗",time:25,difficulty:"Easy",rating:4.5,cals:420,diet:["Vegan","Gluten-Free","Dairy-Free"],
+   desc:"A nourishing bowl of roasted sweet potato, spiced chickpeas, quinoa, fresh kale, and creamy tahini dressing.",
+   ingredients:["1 cup white quinoa","400g tin chickpeas","1 large sweet potato, cubed","100g kale, massaged","1 avocado","Cherry tomatoes","4 tbsp tahini","1 lemon","2 garlic cloves","Olive oil","Toasted sesame seeds"],
+   steps:["Cook quinoa in vegetable broth (not water) for extra flavour. Fluff with a fork and cool.","Toss chickpeas and sweet potato with olive oil, cumin, and paprika. Roast at 200°C for 25 minutes until golden.","Massage kale with a drizzle of olive oil and pinch of salt until darkened and silky.","Whisk tahini with lemon juice, crushed garlic, and 3–4 tbsp water until smooth and pourable.","Slice avocado and halve cherry tomatoes.","Assemble bowls: quinoa base, then arrange each topping in sections.","Drizzle generously with tahini dressing and finish with sesame seeds."],
+   nutrition:{cal:420,protein:18,carbs:56,fat:16}},
+
+  {id:12,name:"French Onion Soup",cuisine:"French",emoji:"🧅",time:90,difficulty:"Medium",rating:4.8,cals:380,diet:["Vegetarian"],
+   desc:"Deeply caramelised onions in rich stock topped with toasted baguette croutons and molten bubbling Gruyère. A timeless classic.",
+   ingredients:["1.5kg brown onions, thinly sliced","1.5L quality beef or vegetable stock","200ml dry white wine","1 baguette","250g Gruyère, coarsely grated","60g unsalted butter","Fresh thyme","2 bay leaves","1 tbsp flour","Salt & pepper"],
+   steps:["Melt butter in a wide heavy pot over medium-low. Add all onions and a large pinch of salt.","Cook, stirring every 5–10 minutes, for 60–70 minutes until deeply caramelised and dark mahogany brown.","Add flour and cook 2 minutes. Add wine and scrape up all the caramelised bits.","Add stock, thyme, and bay leaves. Simmer 20 minutes. Season generously.","Slice baguette into thick rounds and toast under the grill until golden on both sides.","Ladle soup into ovenproof bowls. Top with 2 croutons. Pile Gruyère generously on top.","Broil under grill for 3–4 minutes until cheese is molten, golden, and bubbling at the edges."],
+   nutrition:{cal:380,protein:14,carbs:38,fat:20}},
+
+  /* ── MORE ITALIAN ── */
+  {id:13,name:"Neapolitan Margherita Pizza",cuisine:"Italian",emoji:"🍕",time:40,difficulty:"Medium",rating:4.9,cals:590,diet:["Vegetarian"],
+   desc:"Hand-stretched Neapolitan dough blistered in a scorching hot oven with San Marzano tomato, fresh mozzarella, and basil.",
+   ingredients:["500g 00 flour","7g instant yeast","300ml warm water","10g salt","1 tsp sugar","San Marzano tomatoes (crushed by hand)","250g fresh buffalo mozzarella","Fresh basil leaves","Extra virgin olive oil","Flaky sea salt"],
+   steps:["Mix flour, yeast, salt, sugar, and water into a shaggy dough. Knead for 10 minutes until smooth and elastic.","Oil the bowl, cover, and let rise at room temperature for 2 hours until doubled.","Divide into 2 balls. Rest 30 minutes. Preheat oven to its maximum temperature with a pizza stone or heavy tray inside.","Stretch each ball by hand into a thin round — avoid a rolling pin to preserve the air bubbles.","Spread crushed tomatoes sparingly. Tear mozzarella and scatter over the top.","Slide onto the screaming hot stone. Bake 8–10 minutes until crust is charred and cheese is bubbling.","Drizzle with olive oil, top with fresh basil, and a pinch of sea salt. Serve immediately."],
+   nutrition:{cal:590,protein:24,carbs:78,fat:20}},
+
+  {id:14,name:"Osso Buco alla Milanese",cuisine:"Italian",emoji:"🦴",time:120,difficulty:"Hard",rating:4.8,cals:680,diet:["Gluten-Free"],
+   desc:"Braised veal shanks in white wine, tomato, and gremolata. A Milanese Sunday masterpiece that rewards patience.",
+   ingredients:["4 veal osso buco shanks","1 onion","2 carrots","2 celery stalks","200ml dry white wine","400g crushed tomatoes","500ml veal or chicken stock","Gremolata: lemon zest, garlic, parsley","Flour for dredging","Butter & olive oil"],
+   steps:["Season veal shanks and dredge lightly in flour, shaking off excess.","Sear in a mix of butter and olive oil until deeply browned on both sides. Remove.","In the same pot, sauté diced onion, carrot, and celery until soft.","Add white wine and reduce by half, scraping the base.","Add tomatoes and stock. Return shanks to pot. Liquid should reach halfway up the meat.","Cover tightly and braise in the oven at 160°C for 1.5–2 hours until meat is falling off the bone.","Make gremolata: combine lemon zest, minced garlic, and chopped parsley. Scatter over just before serving."],
+   nutrition:{cal:680,protein:55,carbs:18,fat:38}},
+
+  {id:15,name:"Tiramisu",cuisine:"Italian",emoji:"☕",time:30,difficulty:"Easy",rating:4.9,cals:490,diet:["Vegetarian"],
+   desc:"Classic Italian no-bake dessert of espresso-soaked ladyfingers layered with mascarpone cream and dusted with cocoa.",
+   ingredients:["500g mascarpone","4 eggs, separated","100g caster sugar","300ml strong espresso, cooled","2 tbsp Marsala wine or rum","24 Savoiardi ladyfingers","Unsweetened cocoa powder for dusting","Dark chocolate shavings"],
+   steps:["Beat egg yolks and sugar until pale and creamy. Fold in mascarpone until silky and smooth.","In a separate clean bowl, whisk egg whites to stiff peaks.","Gently fold egg whites into the mascarpone mixture in three additions to keep it airy.","Combine cooled espresso and Marsala in a shallow bowl.","Quickly dip each ladyfinger in espresso — 2–3 seconds per side — and arrange in a single layer in a dish.","Spread half the mascarpone cream over the ladyfingers. Repeat with another layer of soaked fingers and cream.","Refrigerate at least 4 hours or overnight. Dust generously with cocoa before serving."],
+   nutrition:{cal:490,protein:10,carbs:44,fat:30}},
+
+  /* ── MORE ASIAN ── */
+  {id:16,name:"Beef Pho",cuisine:"Asian",emoji:"🍵",time:180,difficulty:"Hard",rating:4.9,cals:420,diet:["Dairy-Free","Gluten-Free"],
+   desc:"Deeply aromatic Vietnamese beef broth with star anise, charred ginger, and silky rice noodles. A labour of fragrant love.",
+   ingredients:["1.5kg beef bones","500g beef brisket","200g rice noodles","4 star anise","1 cinnamon stick","5 cloves","2 cardamom pods","5cm ginger, charred","1 onion, charred","Fish sauce","Rock sugar","Bean sprouts, basil, lime to serve"],
+   steps:["Blanch beef bones in boiling water for 10 minutes. Rinse thoroughly under cold water.","Char ginger and onion halves directly over a gas flame or under a grill until blackened in spots.","Place bones, brisket, charred aromatics, and whole spices in a large pot. Cover with cold water.","Bring to a boil, skim foam, reduce to a bare simmer. Cook for 3 hours.","Season broth with fish sauce and rock sugar until perfectly balanced — savoury, faintly sweet.","Strain broth. Slice brisket thinly. Cook noodles per packet.","Assemble: noodles in bowls, top with brisket, ladle boiling broth over. Serve with bean sprouts, basil, and lime."],
+   nutrition:{cal:420,protein:38,carbs:42,fat:10}},
+
+  {id:17,name:"Japanese Ramen",cuisine:"Asian",emoji:"🍜",time:90,difficulty:"Hard",rating:4.8,cals:560,diet:["Dairy-Free"],
+   desc:"Rich tonkotsu-style pork broth with springy noodles, chashu pork belly, soft-boiled marinated eggs, and nori.",
+   ingredients:["1kg pork trotters & bones","500g pork belly","4 portions fresh ramen noodles","4 eggs","Soy sauce","Mirin","Sake","Spring onions","Nori sheets","Bamboo shoots","Sesame oil","Garlic & ginger"],
+   steps:["Blanch pork bones and trotters, rinse. Cover with cold water and boil on high for 30 minutes to develop a milky broth.","Reduce heat and simmer 4 hours, topping up water. Strain. Season broth.","Roll and tie pork belly. Braise in soy, mirin, sake, and water for 90 minutes. Cool, then slice.","Marinate soft-boiled eggs (6.5 min) in diluted soy and mirin for at least 2 hours.","Prepare tare: combine soy, mirin, and sake. Reduce by one-third.","Cook noodles per packet — they need only 60–90 seconds. Drain.","Place tare in each bowl, ladle over hot broth. Add noodles, sliced chashu, halved egg, nori, and spring onions."],
+   nutrition:{cal:560,protein:40,carbs:52,fat:20}},
+
+  {id:18,name:"Korean Bibimbap",cuisine:"Asian",emoji:"🍚",time:40,difficulty:"Medium",rating:4.7,cals:510,diet:["Vegetarian","Gluten-Free","Dairy-Free"],
+   desc:"A vibrant Korean rice bowl with seasoned vegetables, fried egg, and gochujang sauce. Colourful, balanced, and delicious.",
+   ingredients:["2 cups short-grain rice","2 eggs","1 zucchini","1 carrot","100g spinach","100g shiitake mushrooms","Bean sprouts","Sesame oil","Soy sauce","3 tbsp gochujang","1 tbsp honey","Sesame seeds","Toasted seaweed"],
+   steps:["Cook rice until fluffy. Season lightly with sesame oil and a pinch of salt.","Separately sauté each vegetable with a little sesame oil, soy, and garlic. Keep them distinct and vibrant.","Blanch spinach and bean sprouts for 30 seconds. Squeeze dry and season.","Mix gochujang sauce: combine paste, sesame oil, honey, soy, garlic, and a splash of water.","Fry eggs sunny-side-up in sesame oil until whites are set and edges are slightly crisp.","Divide rice between bowls. Arrange vegetables in sections around the bowl.","Place fried egg in the centre. Drizzle with gochujang sauce and scatter sesame seeds."],
+   nutrition:{cal:510,protein:18,carbs:76,fat:14}},
+
+  {id:19,name:"Dim Sum Har Gow",cuisine:"Asian",emoji:"🥟",time:60,difficulty:"Hard",rating:4.7,cals:280,diet:["Dairy-Free"],
+   desc:"Translucent crystal shrimp dumplings — the benchmark of any dim sum spread. Delicate wrappers hiding a juicy prawn filling.",
+   ingredients:["250g wheat starch","80g tapioca flour","250ml boiling water","400g raw prawns, peeled","100g bamboo shoots, minced","1 tbsp sesame oil","1 tbsp soy sauce","1 tsp sugar","White pepper","Fresh ginger"],
+   steps:["Mix wheat starch and tapioca flour. Pour in boiling water and stir rapidly. Knead until a smooth, pliable dough forms.","Keep dough covered with a damp cloth to prevent drying out.","Chop prawns coarsely — keep some texture. Mix with bamboo shoots, sesame oil, soy, sugar, ginger, and white pepper.","Divide dough into small balls. Flatten each into a thin round disc using a cleaver or heavy flat surface.","Place a teaspoon of filling in the centre. Fold and pleat the edge to seal, forming 7–9 pleats.","Steam over boiling water in a lined bamboo steamer for 6–8 minutes until translucent.","Serve immediately with chilli soy dipping sauce."],
+   nutrition:{cal:280,protein:18,carbs:34,fat:6}},
+
+  /* ── MORE INDIAN ── */
+  {id:20,name:"Dal Makhani",cuisine:"Indian",emoji:"🫘",time:70,difficulty:"Medium",rating:4.8,cals:440,diet:["Vegetarian","Gluten-Free"],
+   desc:"Slow-simmered black lentils and kidney beans in a deeply spiced tomato-cream sauce. The jewel of Punjabi cooking.",
+   ingredients:["250g whole black lentils (urad dal)","50g kidney beans","2 tomatoes, puréed","1 onion, finely diced","3 tbsp ginger-garlic paste","1 tsp cumin seeds","2 tsp garam masala","1 tsp chilli powder","100ml double cream","50g butter","Coriander to garnish"],
+   steps:["Soak lentils and kidney beans overnight. Pressure cook with salt until completely soft, about 25 minutes.","In a heavy pan, melt butter. Fry cumin seeds until they pop. Add onion and cook until golden.","Add ginger-garlic paste and cook 2 minutes. Add tomato purée and all spices. Cook 10 minutes until oil separates.","Add cooked lentils and beans with their cooking liquid. Stir well.","Simmer on the lowest possible heat for 30 minutes, stirring often to prevent sticking.","Stir in cream. Taste and adjust seasoning — it should be rich and deeply savoury.","Garnish with a swirl of cream, a knob of butter, and fresh coriander."],
+   nutrition:{cal:440,protein:22,carbs:52,fat:16}},
+
+  {id:21,name:"Masala Dosa",cuisine:"Indian",emoji:"🫓",time:50,difficulty:"Medium",rating:4.6,cals:370,diet:["Vegan","Gluten-Free","Dairy-Free"],
+   desc:"Crispy fermented rice and lentil crêpes filled with spiced potato masala. South India's greatest street food export.",
+   ingredients:["200g dosa rice","80g urad dal","1/2 tsp fenugreek seeds","4 large potatoes","2 onions, sliced","1 tsp mustard seeds","Curry leaves","Green chillies","Turmeric","Fresh coriander","Oil","Sambar & coconut chutney to serve"],
+   steps:["Soak rice, urad dal, and fenugreek separately for 6 hours. Blend together with water to a smooth, slightly thick batter. Ferment overnight.","Boil potatoes until soft. Mash roughly leaving some chunks.","Temper mustard seeds in oil until they pop. Add curry leaves, chillies, and onions. Cook until golden. Mix into mashed potato with turmeric and coriander.","Heat a flat pan until very hot. Ladle batter and spread in concentric circles into a thin crêpe.","Drizzle oil around edges. Cook until golden and crisp on the bottom.","Add a line of potato masala across the centre. Fold the dosa over.","Serve hot with sambar and fresh coconut chutney."],
+   nutrition:{cal:370,protein:10,carbs:62,fat:10}},
+
+  /* ── MORE MEXICAN ── */
+  {id:22,name:"Chiles en Nogada",cuisine:"Mexican",emoji:"🫑",time:90,difficulty:"Hard",rating:4.8,cals:520,diet:["Gluten-Free"],
+   desc:"Roasted poblano chillies stuffed with picadillo of meat, dried fruit, and almonds, topped with walnut cream and pomegranate.",
+   ingredients:["6 large poblano chillies","500g minced pork","1 peach, diced","1 pear, diced","50g raisins","50g blanched almonds","1 tomato, diced","Cinnamon, cloves, black pepper","200g walnuts","150g cream cheese","100ml cream","Pomegranate seeds","Flat-leaf parsley"],
+   steps:["Char poblano chillies directly over a flame until blackened all over. Place in a bag to steam 15 minutes. Peel and make a slit to remove seeds.","Cook minced pork with onion and garlic until browned. Add tomatoes, spices, fruit, and almonds. Simmer 20 minutes until fragrant.","Stuff each peeled poblano carefully with the picadillo filling.","Blend walnuts, cream cheese, and cream until silky smooth. Season with salt and a pinch of cinnamon.","Arrange stuffed chillies on a platter.","Spoon walnut sauce generously over each chile.","Garnish with pomegranate seeds and flat-leaf parsley — representing the green, white, and red of the Mexican flag."],
+   nutrition:{cal:520,protein:30,carbs:38,fat:28}},
+
+  {id:23,name:"Pozole Rojo",cuisine:"Mexican",emoji:"🌽",time:100,difficulty:"Medium",rating:4.7,cals:450,diet:["Gluten-Free","Dairy-Free"],
+   desc:"A hearty, deeply red broth with hominy, tender pulled pork, and a rich ancho-guajillo chile base. Pure Mexican soul food.",
+   ingredients:["800g pork shoulder","800g canned hominy","4 dried ancho chiles","3 dried guajillo chiles","1 onion","5 garlic cloves","1 tsp oregano","Cumin","Tostadas, shredded cabbage, radishes, lime to serve"],
+   steps:["Simmer pork shoulder in water with onion, garlic, and salt for 90 minutes until very tender. Reserve broth.","Toast dried chiles in a dry pan 30 seconds per side. Soak in hot water for 20 minutes.","Blend soaked chiles with garlic, a cup of pork broth, cumin, and oregano until completely smooth. Strain.","Fry the chile purée in a little oil for 5 minutes until darkened and fragrant.","Combine chile sauce with the pork broth. Add rinsed hominy.","Shred pork and add to the pot. Simmer together 20 minutes.","Ladle into bowls. Serve with tostadas, shredded cabbage, sliced radishes, oregano, and lime."],
+   nutrition:{cal:450,protein:38,carbs:42,fat:14}},
+
+  /* ── MEDITERRANEAN ── */
+  {id:24,name:"Greek Moussaka",cuisine:"Mediterranean",emoji:"🍆",time:100,difficulty:"Hard",rating:4.7,cals:590,diet:["Gluten-Free"],
+   desc:"Layers of roasted aubergine, spiced lamb mince, and velvety béchamel. Greece's greatest comfort casserole.",
+   ingredients:["3 large aubergines, sliced","600g minced lamb","400g crushed tomatoes","1 onion","3 garlic cloves","Cinnamon, allspice, nutmeg","500ml whole milk","50g butter","50g flour","2 eggs","100g kefalotyri or Parmesan, grated","Olive oil"],
+   steps:["Salt aubergine slices and rest 30 minutes. Rinse, pat dry, and roast with olive oil at 200°C for 20 minutes.","Brown minced lamb with onion and garlic. Add crushed tomatoes, cinnamon, allspice, and nutmeg. Simmer 20 minutes.","Make béchamel: melt butter, stir in flour, cook 2 minutes. Gradually whisk in warm milk until thick and smooth. Cool slightly, beat in eggs and half the cheese.","In a large baking dish, layer roasted aubergines, meat sauce, then remaining aubergines.","Pour béchamel over the top. Sprinkle with remaining cheese.","Bake at 180°C for 40 minutes until deeply golden and set.","Rest 20 minutes before slicing — it slices cleanly once settled."],
+   nutrition:{cal:590,protein:35,carbs:30,fat:38}},
+
+  {id:25,name:"Spanakopita",cuisine:"Mediterranean",emoji:"🥧",time:70,difficulty:"Medium",rating:4.6,cals:380,diet:["Vegetarian"],
+   desc:"Flaky, buttered filo pastry filled with spinach, feta, dill, and egg. Greece's most beloved savoury pastry.",
+   ingredients:["500g fresh spinach","250g feta, crumbled","2 eggs","1 onion, finely diced","Spring onions","Large bunch fresh dill","1/4 tsp nutmeg","12 sheets filo pastry","100g butter, melted","Olive oil","Salt & pepper"],
+   steps:["Wilt spinach in a dry pan. Cool and squeeze out all excess water — this is critical to avoid a soggy pastry.","Mix squeezed spinach with crumbled feta, eggs, diced onion, spring onions, dill, and nutmeg. Season.","Brush a 30x20cm baking tray with butter. Layer 6 filo sheets, brushing each generously with butter.","Spread the spinach-feta filling evenly over the filo base.","Layer remaining 6 filo sheets on top, brushing each with butter. Score the top layer into portions.","Bake at 180°C for 40–45 minutes until deeply golden and very crisp.","Cool for 10 minutes before cutting through to the base along the score lines."],
+   nutrition:{cal:380,protein:16,carbs:30,fat:22}},
+
+  /* ── MORE FRENCH ── */
+  {id:26,name:"Coq au Vin",cuisine:"French",emoji:"🍷",time:100,difficulty:"Medium",rating:4.8,cals:550,diet:["Gluten-Free","Dairy-Free"],
+   desc:"Chicken slowly braised in red wine with lardons, pearl onions, and mushrooms. The French farmhouse dish in all its glory.",
+   ingredients:["1 whole chicken, jointed","750ml good red wine (Burgundy ideally)","200g lardons or thick-cut bacon","200g pearl onions","300g cremini mushrooms","4 garlic cloves","2 tbsp tomato paste","Bouquet garni (thyme, bay, parsley)","Chicken stock","Flour","Butter"],
+   steps:["Marinate chicken pieces in red wine with garlic and bouquet garni overnight in the fridge.","Remove chicken, pat dry, reserve marinade. Dredge chicken in flour, season well.","Sear chicken in butter until deeply browned on all sides. Remove.","Fry lardons until crispy. Add pearl onions and cook until lightly coloured.","Add garlic and tomato paste. Cook 1 minute. Pour in the reserved marinade.","Return chicken to the pot. Add stock to just cover. Braise at 160°C for 1 hour.","Add mushrooms in the last 20 minutes. Remove bouquet garni and serve with crusty bread."],
+   nutrition:{cal:550,protein:48,carbs:16,fat:24}},
+
+  {id:27,name:"Crème Brûlée",cuisine:"French",emoji:"🍮",time:60,difficulty:"Medium",rating:4.9,cals:420,diet:["Vegetarian","Gluten-Free"],
+   desc:"Silky vanilla custard beneath a perfectly shatteringly caramelised sugar crust. The French dessert that never gets old.",
+   ingredients:["500ml double cream","6 egg yolks","100g caster sugar","1 vanilla pod, split and scraped","Extra caster sugar for the crust","Pinch of sea salt"],
+   steps:["Heat cream with vanilla pod and seeds until steaming — do not boil. Remove vanilla pod.","Whisk egg yolks with sugar until pale. Slowly pour warm cream into eggs while whisking constantly to temper.","Strain through a fine sieve. Skim off any foam.","Pour into 4–6 ramekins. Place in a deep baking tray. Pour hot water around ramekins to reach halfway up.","Bake at 150°C for 35–40 minutes until just set with a slight wobble in the centre.","Cool completely then refrigerate at least 2 hours.","Just before serving, sprinkle a thin layer of caster sugar. Torch in steady sweeping passes until amber and cracked."],
+   nutrition:{cal:420,protein:8,carbs:28,fat:32}},
+
+  /* ── MORE AMERICAN ── */
+  {id:28,name:"BBQ Beef Brisket",cuisine:"American",emoji:"🥩",time:360,difficulty:"Hard",rating:4.9,cals:680,diet:["Gluten-Free","Dairy-Free","Keto"],
+   desc:"Texas-style smoked beef brisket with a peppery bark and a smoke ring that runs deep pink through every slice.",
+   ingredients:["2.5kg whole beef brisket (packer cut)","3 tbsp coarse kosher salt","3 tbsp coarsely cracked black pepper","1 tsp garlic powder","Oak or hickory wood chunks","Apple cider vinegar in a spray bottle"],
+   steps:["Trim brisket to about 6mm of fat cap. Mix salt, pepper, and garlic powder. Coat brisket all over generously.","Set smoker to 107°C with oak or hickory wood. Place brisket fat-side up.","Smoke for 6–8 hours, spritzing with apple cider vinegar every hour after the 3-hour mark.","When internal temperature hits 74°C and bark is set (deep mahogany, won't rub off), wrap tightly in butcher paper.","Return to smoker until internal temperature reaches 95–97°C, about 2–4 more hours.","Rest wrapped in a cooler for at least 1 hour. Minimum 2 is better.","Slice against the grain in 1cm pencil-width slices. Serve with white bread and pickled jalapeños."],
+   nutrition:{cal:680,protein:62,carbs:2,fat:46}},
+
+  {id:29,name:"New England Clam Chowder",cuisine:"American",emoji:"🦪",time:45,difficulty:"Medium",rating:4.6,cals:490,diet:["Gluten-Free"],
+   desc:"Thick, creamy clam chowder with tender potatoes, smoky bacon, and sweet clams. New England in a bowl.",
+   ingredients:["600g clams or 2 tins chopped clams","4 rashers streaky bacon","3 celery stalks","1 large onion","3 large potatoes, diced","500ml whole milk","200ml double cream","500ml clam juice or fish stock","Flour","Butter","Fresh thyme","Fresh flat-leaf parsley"],
+   steps:["Steam fresh clams until opened. Reserve the liquor. Remove meat and chop. (Or drain tinned clams, reserve liquid.)","Fry bacon in a heavy pot until crispy. Remove and set aside.","Sauté diced onion and celery in bacon fat with a little butter until soft.","Add flour and cook 2 minutes. Gradually whisk in clam liquor and stock. Stir until smooth.","Add potatoes and thyme. Simmer 15 minutes until potatoes are just tender.","Add milk and cream. Heat gently — do not boil or it may curdle.","Stir in clam meat and crumbled bacon. Season well. Finish with fresh parsley and black pepper."],
+   nutrition:{cal:490,protein:28,carbs:36,fat:26}},
+
+  /* ── MORE MIDDLE EASTERN ── */
+  {id:30,name:"Lamb Kofta with Flatbread",cuisine:"Middle Eastern",emoji:"🥙",time:35,difficulty:"Easy",rating:4.7,cals:500,diet:["Dairy-Free","Gluten-Free"],
+   desc:"Juicy minced lamb kofta spiced with cumin, coriander, and warm spices, grilled and served with herby flatbread and yoghurt.",
+   ingredients:["600g minced lamb","1 onion, grated","3 garlic cloves, minced","2 tsp cumin","1 tsp coriander","1 tsp cinnamon","1/2 tsp allspice","Fresh parsley & mint, chopped","Salt & pepper","Flatbreads, yoghurt, cucumber, tomato to serve"],
+   steps:["Combine minced lamb with grated onion, minced garlic, all spices, and chopped fresh herbs.","Mix thoroughly with your hands until everything is evenly incorporated. Refrigerate 30 minutes.","Divide into 12 even portions. Shape around flat metal skewers into elongated cylinders.","Grill or barbecue over high heat for 3–4 minutes per side until charred and cooked through.","Warm flatbreads on the grill for 30 seconds per side.","Serve kofta on flatbreads with yoghurt, sliced cucumber, tomato, and fresh herbs.","Squeeze lemon juice over everything just before eating."],
+   nutrition:{cal:500,protein:38,carbs:28,fat:26}},
+
+  {id:31,name:"Hummus from Scratch",cuisine:"Middle Eastern",emoji:"🫙",time:20,difficulty:"Easy",rating:4.8,cals:220,diet:["Vegan","Gluten-Free","Dairy-Free"],
+   desc:"Silky-smooth chickpea hummus made from scratch with tahini, lemon, and olive oil. Far better than anything from a tub.",
+   ingredients:["400g dried chickpeas (soaked overnight)","1/2 tsp baking soda","120ml good tahini","3 garlic cloves","80ml fresh lemon juice","Cold water as needed","1 tsp cumin","Salt","Extra virgin olive oil & paprika to serve"],
+   steps:["Drain soaked chickpeas. Cook with baking soda in fresh water for 60–90 minutes until very soft — almost falling apart.","Reserve the cooking water. Peel chickpeas for ultra-smooth hummus (optional but worth it).","In a food processor, blitz garlic with lemon juice and salt for 30 seconds.","Add tahini and blitz 1 minute until fluffy and pale.","Add still-warm chickpeas and process for 4–5 minutes, drizzling in cooking water until silky and smooth.","Taste and adjust lemon, salt, and garlic.","Serve in a wide bowl with a well of olive oil, smoked paprika, and whole chickpeas on top."],
+   nutrition:{cal:220,protein:10,carbs:22,fat:12}},
+
+  /* ── JAPANESE ── */
+  {id:32,name:"Chicken Katsu Curry",cuisine:"Asian",emoji:"🍛",time:45,difficulty:"Easy",rating:4.8,cals:620,diet:["Dairy-Free"],
+   desc:"Crispy panko-breaded chicken cutlet over Japanese curry sauce and steamed short-grain rice. A Japanese comfort classic.",
+   ingredients:["2 chicken breasts","80g plain flour","2 eggs, beaten","120g panko breadcrumbs","2 onions","2 carrots","3 garlic cloves","1 tbsp curry powder","1 tbsp garam masala","600ml chicken stock","2 tbsp soy sauce","1 tbsp honey","Oil for frying","Short-grain rice"],
+   steps:["Butterfly chicken breasts and pound to even thickness. Season well.","Set up a breading station: flour, beaten eggs, panko. Coat each piece flour → egg → panko, pressing firmly.","Shallow-fry at 175°C for 3–4 minutes per side until golden and cooked through. Drain on a rack.","Sauté sliced onions in oil for 15 minutes until soft and golden. Add garlic and curry powders.","Add carrots and stock. Simmer 20 minutes. Add soy and honey.","Blend curry sauce until smooth and velvety. Strain for extra silkiness if desired.","Slice katsu into strips. Serve over rice, half-covered in curry sauce."],
+   nutrition:{cal:620,protein:44,carbs:68,fat:18}},
+
+  {id:33,name:"Miso Soup & Onigiri",cuisine:"Asian",emoji:"🍙",time:20,difficulty:"Easy",rating:4.5,cals:290,diet:["Vegan","Dairy-Free"],
+   desc:"Umami-rich miso broth with silken tofu and wakame, alongside hand-pressed rice balls with nori. A Japanese everyday staple.",
+   ingredients:["1L dashi stock (kombu & bonito or vegan kombu)","4 tbsp white or red miso paste","150g silken tofu, cubed","2 tbsp dried wakame seaweed","Spring onions","2 cups short-grain rice","Nori sheets","Salt","Sesame seeds","Pickled plum or salmon for filling"],
+   steps:["Rinse rice until water runs clear. Cook in a rice cooker or pot with slightly less water than usual.","Rehydrate wakame in cold water for 5 minutes. Drain.","Bring dashi to a gentle simmer. Never boil miso — dissolve it into a ladle of hot dashi first, then stir into the pot.","Add silken tofu cubes and wakame. Heat gently. Finish with sliced spring onions.","Season rice lightly with salt while still hot. Wet hands with salted water.","Take a palm-sized amount of rice, press a dent, add filling, seal rice around it. Shape into a triangle.","Wrap onigiri with a strip of nori. Serve alongside the miso soup."],
+   nutrition:{cal:290,protein:12,carbs:52,fat:4}},
+
+  /* ── MOROCCAN ── */
+  {id:34,name:"Lamb Tagine with Preserved Lemon",cuisine:"Middle Eastern",emoji:"🥘",time:120,difficulty:"Medium",rating:4.8,cals:530,diet:["Gluten-Free","Dairy-Free"],
+   desc:"Slow-cooked Moroccan lamb with preserved lemon, olives, and ras el hanout. Fragrant, warming, and extraordinary over couscous.",
+   ingredients:["1kg lamb shoulder, cubed","1 preserved lemon, rinsed and sliced","100g green olives","2 onions, grated","4 garlic cloves","2 tsp ras el hanout","1 tsp cumin","1 tsp turmeric","1/2 tsp ginger","Pinch of saffron","Fresh coriander & flat-leaf parsley","Couscous to serve"],
+   steps:["Mix lamb with grated onion, garlic, and all spices. Massage well. Marinate 1 hour or overnight.","In a tagine or heavy casserole, layer marinated lamb.","Add saffron dissolved in 2 tbsp warm water. Add enough water to reach halfway up the meat.","Cover tightly and cook on very low heat for 1.5–2 hours until lamb is completely tender.","In the last 20 minutes, add preserved lemon slices and olives.","Taste and adjust seasoning — it should be deeply aromatic with bright citrus notes.","Serve directly from the tagine over fluffy couscous, scattered with fresh herbs."],
+   nutrition:{cal:530,protein:42,carbs:22,fat:30}},
+
+  /* ── SPANISH ── */
+  {id:35,name:"Seafood Paella",cuisine:"Mediterranean",emoji:"🥘",time:55,difficulty:"Hard",rating:4.8,cals:570,diet:["Gluten-Free","Dairy-Free"],
+   desc:"The legendary Valencian rice dish with saffron, squid, mussels, and prawns, cooked in a wide pan to develop the sacred socarrat.",
+   ingredients:["400g bomba or calasparra rice","500g mussels, cleaned","300g raw king prawns","200g squid, cleaned and sliced","1 onion","4 garlic cloves","400g crushed tomatoes","1.2L hot seafood stock","1 tsp smoked paprika","Generous pinch of saffron","Fresh flat-leaf parsley","2 lemons","Olive oil"],
+   steps:["Steep saffron in 3 tbsp hot water for 10 minutes.","Heat olive oil in a wide paella pan (42cm+) over medium-high. Sauté prawns and squid briefly. Remove.","In the same pan, sauté onion until golden. Add garlic and smoked paprika.","Add crushed tomatoes and cook until deeply reduced, almost a paste — 10 minutes.","Add rice and stir to coat in the sofrito for 2 minutes.","Pour in all hot stock and saffron water. Arrange seafood on top. Do not stir again.","Cook on medium heat 18–20 minutes. Turn up heat for the final 2 minutes to create the crispy socarrat base. Rest 5 minutes."],
+   nutrition:{cal:570,protein:38,carbs:62,fat:16}},
+
+  /* ── DESSERTS ── */
+  {id:36,name:"Mango Sticky Rice",cuisine:"Asian",emoji:"🥭",time:45,difficulty:"Easy",rating:4.7,cals:380,diet:["Vegan","Gluten-Free","Dairy-Free"],
+   desc:"Thai sweet sticky rice soaked in salted coconut milk, served with ripe mango and toasted sesame seeds. Tropical perfection.",
+   ingredients:["300g glutinous rice","400ml coconut milk","60g caster sugar","1/2 tsp salt","2 ripe mangoes, sliced","Toasted sesame seeds or mung beans","Extra coconut milk to drizzle"],
+   steps:["Soak glutinous rice in cold water for at least 4 hours, preferably overnight. Drain.","Steam rice over boiling water in a lined bamboo steamer for 25 minutes until fully translucent and tender.","Meanwhile, gently heat coconut milk with sugar and salt until dissolved. Reserve 4 tbsp for serving.","Transfer hot rice to a bowl. Pour warm coconut milk mixture over and stir gently. Cover and rest 20 minutes — the rice will absorb it completely.","Peel and slice mangoes. Fan slices attractively on one side of each plate.","Mound a portion of sticky rice alongside the mango.","Drizzle the reserved coconut milk over the rice. Scatter toasted sesame seeds."],
+   nutrition:{cal:380,protein:6,carbs:74,fat:8}}
+];
+
+// STATE
+let state={query:'',cuisine:'',time:'',difficulty:'',diets:[],sort:'rating',favourites:new Set()};
+
+// DOM
+const grid=document.getElementById('recipeGrid');
+const countSpan=document.getElementById('countSpan');
+const modalOverlay=document.getElementById('modalOverlay');
+const modalContent=document.getElementById('modalContent');
+const modalClose=document.getElementById('modalClose');
+
+function filterRecipes(){
+  let r=[...RECIPES];
+  const q=state.query.toLowerCase().trim();
+  if(q) r=r.filter(x=>
+    x.name.toLowerCase().includes(q)||
+    x.cuisine.toLowerCase().includes(q)||
+    x.desc.toLowerCase().includes(q)||
+    x.ingredients.some(i=>i.toLowerCase().includes(q))||
+    x.diet.some(d=>d.toLowerCase().includes(q))
+  );
+  if(state.cuisine) r=r.filter(x=>x.cuisine===state.cuisine);
+  if(state.time) r=r.filter(x=>x.time<=+state.time);
+  if(state.difficulty) r=r.filter(x=>x.difficulty===state.difficulty);
+  if(state.diets.length) r=r.filter(x=>state.diets.every(d=>x.diet.includes(d)));
+  const sorts={rating:(a,b)=>b.rating-a.rating,time:(a,b)=>a.time-b.time,cals:(a,b)=>a.cals-b.cals,name:(a,b)=>a.name.localeCompare(b.name)};
+  r.sort(sorts[state.sort]);
+  return r;
+}
+
+function renderGrid(){
+  const results=filterRecipes();
+  countSpan.textContent=results.length;
+  grid.innerHTML='';
+  if(!results.length){
+    grid.innerHTML=`<div class="empty"><div class="empty-icon">🌿</div><h3>No recipes found</h3><p>Try adjusting your search terms or clearing some filters.</p></div>`;
+    return;
+  }
+  results.forEach((r,i)=>{
+    const loved=state.favourites.has(r.id);
+    const card=document.createElement('div');
+    card.className='recipe-card';
+    card.style.animationDelay=`${i*0.05}s`;
+    card.innerHTML=`
+      <div class="card-thumb">
+        <div class="card-emoji">${r.emoji}</div>
+        <div class="card-thumb-overlay"></div>
+        <div class="card-badges">
+          ${r.diet.slice(0,2).map(d=>`<span class="badge badge-diet">${d}</span>`).join('')}
+          <span class="badge badge-time">⏱ ${r.time}m</span>
+          <span class="badge badge-diff">${r.difficulty}</span>
+        </div>
+        <button class="card-fav${loved?' loved':''}" data-id="${r.id}" title="Favourite">${loved?'❤️':'🤍'}</button>
+        <div class="card-rating-pill">★ ${r.rating}</div>
+      </div>
+      <div class="card-body">
+        <div class="card-cuisine">${r.cuisine}</div>
+        <h3 class="card-title">${r.name}</h3>
+        <p class="card-desc">${r.desc}</p>
+        <div class="card-meta">
+          <span class="meta-item">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            ${r.time} min
+          </span>
+          <span class="meta-item">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            ${r.difficulty}
+          </span>
+          <span class="card-cals"><strong>${r.cals}</strong> kcal</span>
+        </div>
+      </div>`;
+    card.addEventListener('click',e=>{if(!e.target.closest('.card-fav'))openModal(r);});
+    card.querySelector('.card-fav').addEventListener('click',e=>{
+      e.stopPropagation();
+      const btn=card.querySelector('.card-fav');
+      if(state.favourites.has(r.id)){state.favourites.delete(r.id);btn.innerHTML='🤍';btn.classList.remove('loved');}
+      else{state.favourites.add(r.id);btn.innerHTML='❤️';btn.classList.add('loved');}
+    });
+    grid.appendChild(card);
+  });
+}
+
+function openModal(r){
+  modalContent.innerHTML=`
+    <div class="modal-hero">
+      <div style="font-size:8rem;z-index:1;position:relative">${r.emoji}</div>
+      <div class="modal-hero-overlay"></div>
+      <div class="modal-hero-bottom">
+        <div>
+          <div class="modal-cuisine-badge">${r.cuisine}</div>
+          <div class="modal-title">${r.name}</div>
+        </div>
+        <div class="modal-rating">★ ${r.rating}</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">
+        ${r.diet.map(d=>`<span class="badge badge-diet">${d}</span>`).join('')}
+        <span class="badge badge-diff">${r.difficulty}</span>
+      </div>
+      <p style="font-size:.9rem;color:var(--text2);line-height:1.7;margin-bottom:1.5rem">${r.desc}</p>
+      <div class="modal-stats">
+        <div class="stat-card"><div class="stat-val">${r.time}m</div><div class="stat-lbl">Cook Time</div></div>
+        <div class="stat-card"><div class="stat-val">${r.ingredients.length}</div><div class="stat-lbl">Ingredients</div></div>
+        <div class="stat-card"><div class="stat-val">${r.steps.length}</div><div class="stat-lbl">Steps</div></div>
+        <div class="stat-card"><div class="stat-val">${r.cals}</div><div class="stat-lbl">Calories</div></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">🥕 Ingredients</div>
+        <div class="ingredient-grid">
+          ${r.ingredients.map(i=>`<div class="ingredient-item"><div class="ing-dot"></div><span>${i}</span></div>`).join('')}
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">👨‍🍳 Method</div>
+        <ol class="steps-list">
+          ${r.steps.map((s,i)=>`<li class="step"><div class="step-num">${i+1}</div><div class="step-text">${s}</div></li>`).join('')}
+        </ol>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">📊 Nutrition (per serving)</div>
+        <div class="nutrition-grid">
+          <div class="nut-card"><div class="nut-val">${r.nutrition.cal}</div><div class="nut-lbl">Calories</div></div>
+          <div class="nut-card"><div class="nut-val">${r.nutrition.protein}g</div><div class="nut-lbl">Protein</div></div>
+          <div class="nut-card"><div class="nut-val">${r.nutrition.carbs}g</div><div class="nut-lbl">Carbs</div></div>
+          <div class="nut-card"><div class="nut-val">${r.nutrition.fat}g</div><div class="nut-lbl">Fat</div></div>
+        </div>
+      </div>
+    </div>`;
+  modalOverlay.classList.add('open');
+  document.body.style.overflow='hidden';
+  document.getElementById('modal').scrollTop=0;
+}
+
+function closeModal(){modalOverlay.classList.remove('open');document.body.style.overflow='';}
+
+// EVENTS
+document.getElementById('mainSearch').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){state.query=e.target.value;renderGrid();}
+});
+document.getElementById('searchBtn').addEventListener('click',()=>{
+  state.query=document.getElementById('mainSearch').value;
+  renderGrid();
+  document.querySelector('main').scrollIntoView({behavior:'smooth'});
+});
+document.querySelectorAll('.qtag').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.qtag').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.query=btn.dataset.q;
+    document.getElementById('mainSearch').value=btn.dataset.q;
+    renderGrid();
+    document.querySelector('main').scrollIntoView({behavior:'smooth'});
+  });
+});
+document.getElementById('filterCuisine').addEventListener('change',e=>{state.cuisine=e.target.value;renderGrid();});
+document.getElementById('filterTime').addEventListener('change',e=>{state.time=e.target.value;renderGrid();});
+document.getElementById('filterDiff').addEventListener('change',e=>{state.difficulty=e.target.value;renderGrid();});
+document.getElementById('sortSelect').addEventListener('change',e=>{state.sort=e.target.value;renderGrid();});
+document.querySelectorAll('.dchip').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    const d=chip.dataset.diet;
+    chip.classList.toggle('active');
+    if(state.diets.includes(d)) state.diets=state.diets.filter(x=>x!==d);
+    else state.diets.push(d);
+    renderGrid();
+  });
+});
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  state={...state,query:'',cuisine:'',time:'',difficulty:'',diets:[],sort:'rating'};
+  document.getElementById('mainSearch').value='';
+  document.getElementById('filterCuisine').value='';
+  document.getElementById('filterTime').value='';
+  document.getElementById('filterDiff').value='';
+  document.getElementById('sortSelect').value='rating';
+  document.querySelectorAll('.dchip,.qtag').forEach(c=>c.classList.remove('active'));
+  renderGrid();
+});
+modalClose.addEventListener('click',closeModal);
+modalOverlay.addEventListener('click',e=>{if(e.target===modalOverlay)closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+renderGrid();
+</script>
+</body>
+</html>
